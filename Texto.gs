@@ -31,12 +31,38 @@ function stripSignature(text) {
   return text.trim();
 }
 
-/** 'Flavia E. Saldana <x@y.com>' -> 'Flavia E. Saldana' */
+/**
+ * 'Flavia E. Saldana <x@y.com>' -> 'Flavia E. Saldana'
+ *
+ * El nombre puede venir con comillas anidadas y escapadas, porque la
+ * lista reenvia y vuelve a escapar lo que ya estaba entre comillas:
+ *
+ *   "\"Federico Salguero (via Google Sheets)\"" <tpi-est-orga@...>
+ *
+ * Por eso primero separamos por el <...> del final (que es lo unico
+ * confiable) y recien despues limpiamos el nombre.
+ */
 function parseSender(from) {
-  const m = from.match(/^\s*"?([^"<]*?)"?\s*<([^>]+)>\s*$/);
-  if (m && m[1].trim()) return m[1].trim();
-  if (m) return m[2];
-  return from.trim();
+  const s = String(from || '').trim();
+
+  const m = s.match(/^([\s\S]*?)\s*<([^>]+)>\s*$/);
+  if (!m) return desescapar(s); // sin <>: suele ser la direccion pelada
+
+  return desescapar(m[1]) || m[2].trim();
+}
+
+/**
+ * Saca las comillas que envuelven un nombre y deshace los escapes.
+ * Itera porque pueden venir varias capas, una por reenvio.
+ */
+function desescapar(texto) {
+  let t = String(texto).trim();
+
+  for (let i = 0; i < 3 && /^"[\s\S]*"$/.test(t); i++) {
+    t = t.slice(1, -1).replace(/\\(["\\])/g, '$1').trim();
+  }
+
+  return t.replace(/\\(["\\])/g, '$1').trim();
 }
 
 /** Saca el prefijo que la lista repite en todos los asuntos. */

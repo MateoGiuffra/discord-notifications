@@ -51,6 +51,9 @@ function limpiarPausa() {
  * en cada corrida.)
  */
 function checkMailAhora() {
+  // La pausa por rate limit si se respeta: saltearla es justo lo que
+  // estira el bloqueo. Para forzar de verdad, limpiarPausa() primero.
+  if (enPausa()) return;
   procesarMails();
 }
 
@@ -141,16 +144,30 @@ function procesarMails() {
   messages.sort(function (a, b) { return a.getDate() - b.getDate(); });
 
   let newCursor = now;
+  let enviados = 0;
 
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
+
+    // Freno de mano para las colas. Si estuvimos en pausa un rato y se
+    // juntaron mails, mandarlos todos de golpe es la mejor forma de
+    // ganarse otro rate limit y volver a empezar. Salen de a poco.
+    if (enviados >= MAX_POR_CORRIDA) {
+      console.log('Quedan ' + (messages.length - i) +
+        ' mails para la proxima corrida.');
+      newCursor = Math.floor(msg.getDate().getTime() / 1000) - 1;
+      break;
+    }
+
     try {
       postToDiscord(webhook, msg);
       seen.add(msg.getId());
-      Utilities.sleep(400); // rate limit del webhook: ~5 req / 2s
+      enviados++;
+      Utilities.sleep(ESPERA_ENTRE_ENVIOS);
     } catch (err) {
       console.error('Fallo enviando ' + msg.getId() + ': ' + err);
-      // Reintentamos este y los siguientes en la proxima corrida.
+      // Reintentamos este y los siguientes en la proxima corrida. El
+      // cursor no pasa de aca, asi que el mail no se pierde.
       newCursor = Math.floor(msg.getDate().getTime() / 1000) - 1;
       break;
     }

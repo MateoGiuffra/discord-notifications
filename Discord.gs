@@ -14,6 +14,19 @@
  */
 function postToDiscord(webhook, msg) {
   let archivos = seleccionarArchivos(msg);
+  let sueltos = [];
+
+  // Discord ordena content, adjuntos, embeds: un PDF queda ARRIBA del
+  // aviso. Con ADJUNTOS_DEBAJO lo sacamos del mensaje principal y va en
+  // uno segundo, que se renderiza abajo. Las imagenes de la galeria se
+  // quedan: tienen que viajar en el mismo request que su embed.
+  if (ADJUNTOS_DEBAJO) {
+    const galeria = galeriaDe(archivos);
+    sueltos = archivos.subidos.filter(function (a) {
+      return galeria.indexOf(a) === -1;
+    });
+    archivos = { subidos: galeria, omitidos: archivos.omitidos };
+  }
 
   // El aviso es lo que importa; los adjuntos son un extra. Si algo del
   // envio con archivos falla por tamaño, el mensaje sale igual.
@@ -77,6 +90,21 @@ function postToDiscord(webhook, msg) {
 
   if (code < 200 || code >= 300) {
     throw new Error('Discord respondio ' + code + ': ' + res.getContentText());
+  }
+
+  // El aviso ya salio. Si el segundo mensaje falla lo logueamos y
+  // seguimos: tirar aca haria que la proxima corrida reenvie el mail
+  // entero y quede duplicado en el canal.
+  if (sueltos.length) {
+    Utilities.sleep(400);
+    const extra = enviarMultipart(webhook, {}, sueltos.map(function (a) {
+      return a.blob;
+    }));
+
+    if (extra.getResponseCode() >= 300) {
+      console.warn('El aviso salio, pero los adjuntos no (' +
+        extra.getResponseCode() + '): ' + extra.getContentText().slice(0, 200));
+    }
   }
 }
 
@@ -234,6 +262,19 @@ function esImagen(adj) {
   return adj.getContentType().indexOf('image/') === 0;
 }
 
+/**
+ * Los archivos que se ven DENTRO del embed.
+ *
+ * Solo imagenes, y hasta MAX_IMAGENES: son las unicas que se pueden
+ * referenciar con attachment://. Todo lo demas (PDF, xlsx, txt, video)
+ * es un adjunto suelto del mensaje.
+ */
+function galeriaDe(archivos) {
+  return archivos.subidos
+    .filter(function (a) { return a.esImagen; })
+    .slice(0, MAX_IMAGENES);
+}
+
 /** Imagen primero, despues video, despues todo lo demas. */
 function prioridad(adj) {
   if (esImagen(adj)) return 0;
@@ -296,12 +337,7 @@ function buildEmbeds(msg, archivos) {
 
   const embeds = [embed];
 
-  // Solo las imagenes pueden ir DENTRO del embed. El resto (PDF, txt,
-  // video) viaja igual en el request y Discord lo muestra abajo con su
-  // propia vista previa.
-  const imagenes = archivos.subidos
-    .filter(function (a) { return a.esImagen; })
-    .slice(0, MAX_IMAGENES);
+  const imagenes = galeriaDe(archivos);
 
   if (imagenes.length) {
     embed.image = { url: 'attachment://' + imagenes[0].blob.getName() };

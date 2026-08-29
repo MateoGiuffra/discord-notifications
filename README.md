@@ -248,11 +248,21 @@ Se sube **todo lo que entre**, no solo imágenes. Van como adjunto del mismo req
 | Imagen | Dentro del embed, hasta `MAX_IMAGENES` (4). Las que sobran, abajo. |
 | PDF | Tarjeta con vista previa de la primera página |
 | `.txt`, `.md`, código | Recuadro con las primeras líneas |
-| Video (mp4, webm, mov) | Reproductor, debajo del embed |
+| Video (mp4, webm, mov) | Reproductor |
 | Resto (zip, docx, xlsx) | Chip de descarga |
 
-Solo las imágenes pueden ir **dentro** del embed, con `attachment://`. El resto viaja
-en el mismo mensaje pero se muestra debajo — no es un mensaje aparte.
+Solo las imágenes pueden ir **dentro** del embed, con `attachment://`.
+
+El resto viaja en el mismo mensaje, pero Discord renderiza siempre en el orden
+**content → adjuntos → embeds**, así que un PDF o un `.xlsx` queda *arriba* del aviso.
+No es azar ni depende de la carga: es el orden fijo del cliente.
+
+Si te molesta, `ADJUNTOS_DEBAJO = true` en [Config.gs](Config.gs) manda esos archivos en
+un **segundo mensaje**, que sí aparece abajo. El costo son dos requests por mail en vez
+de uno — el doble de superficie para comerse un rate limit — y que si el segundo falla,
+el aviso ya salió sin sus adjuntos (queda en el log, no se reintenta: reintentar
+duplicaría el mensaje en el canal). Las imágenes de la galería no se mueven: tienen que
+viajar en el mismo request que su embed.
 
 No hay atajo por markdown: los embeds ignoran `![alt](url)` por completo. Y las URLs
 que trae el HTML de Gmail no sirven: las incrustadas son `cid:` (un adjunto, no una

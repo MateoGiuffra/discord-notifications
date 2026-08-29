@@ -116,6 +116,19 @@ const REINTENTO_MAX_ESPERA = 10; // segundos
 //   este rato: insistir cada minuto solo estira el bloqueo.
 const PAUSA_429_DEFAULT = 15 * 60; // segundos
 
+// Cuantos mails como maximo salen en una misma corrida.
+//
+// Importa despues de una pausa: si estuvimos cortados 15 minutos y se
+// juntaron mails, largarlos todos de una es la mejor forma de ganarse
+// otro bloqueo. Con el trigger cada minuto, 5 por corrida vacia una
+// cola de 20 en 4 minutos, que para un aviso de catedra sobra.
+const MAX_POR_CORRIDA = 5;
+
+// Espera entre envios. El webhook admite ~5 requests cada 2s, o sea uno
+// cada 400ms: dejamos margen porque ese limite se comparte con
+// cualquier otra cosa que postee en el mismo canal.
+const ESPERA_ENTRE_ENVIOS = 600; // ms
+
 // ------------------------------------------------------------- Adjuntos
 
 // Se sube TODO lo que entre, no solo imagenes: Discord previsualiza los
@@ -138,3 +151,14 @@ const MAX_ARCHIVOS = 10;
 // costarnos el mensaje.
 const MAX_ARCHIVO_BYTES = 7 * 1024 * 1024;   // por archivo
 const PRESUPUESTO_ARCHIVOS = 7 * 1024 * 1024; // sumando todos
+
+// Discord renderiza siempre en el mismo orden: content, adjuntos,
+// embeds. No es aleatorio, pero significa que un PDF o un xlsx queda
+// ARRIBA del aviso, que se lee raro.
+//
+// En true, los archivos que no entran en el embed (todo lo que no sea
+// imagen de la galeria) se mandan en un SEGUNDO mensaje, y ahi si
+// quedan abajo. El costo: dos requests por mail en vez de uno, o sea
+// el doble de superficie para comerse un rate limit, y si el segundo
+// falla el aviso ya salio sin sus adjuntos (queda avisado en el log).
+const ADJUNTOS_DEBAJO = false;
