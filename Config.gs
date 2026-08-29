@@ -85,9 +85,25 @@ const HORA_HASTA = 22;
 // repite en todos los mensajes y solo ocupa lugar. '' para desactivar.
 const SUBJECT_PREFIX = '[tpi-est-orga]';
 
-// Donde arranca la firma institucional. Se corta en el primer marcador
-// que aparezca, siempre que caiga en la mitad final del cuerpo: asi un
-// mail que nombre a la facultad al pasar no queda mutilado.
+// Pies que NO son ambiguos: ningun mail de la lista va a tener esto
+// como contenido real, asi que se corta apenas aparecen, sin importar
+// en que parte del cuerpo esten.
+//
+// Son los bloques que agregan las plataformas cuando mandan el mail por
+// vos: Google Sheets, Drive, listas de correo.
+const PIE_FIJO = [
+  /^.{0,2}Does this item look suspicious/i,
+  /^.{0,2}Este (elemento|archivo) parece sospechoso/i,
+  /^You have received this email because/i,
+  /^(Has|Ha) recibido este (correo|mensaje|email)/i,
+  /^Recibiste este (correo|mensaje|email)/i,
+  /^Google LLC, 1600 Amphitheatre/,
+  /^Para darte de baja/i
+];
+
+// Firmas de persona. Estas SI son ambiguas (un mail puede nombrar a la
+// facultad al pasar), asi que solo cortan si caen en la mitad final del
+// cuerpo.
 const FIRMA = [
   /^(Lic|Dr|Dra|Ing|Mg|Prof|Esp)\.\s/,
   /^Vicedirectora?$/,

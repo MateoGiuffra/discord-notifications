@@ -357,6 +357,23 @@ vez Google puede pedirte reautorizar.
 `clasp run <funcion>` ejecuta en la nube desde la terminal, útil para
 `previsualizar()` sin volver al navegador. Necesita un proyecto de GCP propio.
 
+### Sincronización automática al pushear
+
+[.githooks/pre-push](.githooks/pre-push) corre `clasp push -f` antes de cada
+`git push`, así GitHub y Apps Script no se separan nunca.
+
+Está activado con `core.hooksPath`, que es config local del repo. **En un clone nuevo
+hay que activarlo a mano** (los hooks no viajan en el clone):
+
+```bash
+git config core.hooksPath .githooks
+```
+
+Si `clasp` falla, el push a GitHub se aborta a propósito: mejor frenar que dejar los
+dos lados desincronizados. Para saltearlo una vez, `git push --no-verify`.
+
+Va en `pre-push` y no en `post-commit` para no pisar Apps Script en cada commit local.
+
 ### Coloreado de `.gs`
 
 `.gs` es JavaScript, solo cambia la extensión. [.vscode/settings.json](.vscode/settings.json)

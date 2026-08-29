@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# Antes de pushear a GitHub, sincroniza el codigo con Apps Script.
+#
+# Va en pre-push y no post-commit para no pushear a produccion en cada
+# commit local. Si clasp falla, el push a GitHub se aborta: la idea es
+# que los dos lados queden siempre iguales, no que uno se adelante.
+#
+# Para saltearlo una vez:  git push --no-verify
+
+set -e
+
+echo "[pre-push] clasp push -f"
+
+if ! command -v clasp >/dev/null 2>&1; then
+  echo "[pre-push] ERROR: 'clasp' no esta en el PATH."
+  echo "            Instalalo con 'pnpm add -g @google/clasp' o pushea"
+  echo "            con --no-verify si querés saltear la sincronizacion."
+  exit 1
+fi
+
+if [ ! -f .clasp.json ]; then
+  echo "[pre-push] ERROR: falta .clasp.json, no se a que proyecto pushear."
+  exit 1
+fi
+
+if ! clasp push -f; then
+  echo "[pre-push] ERROR: clasp push fallo. No se pushea a GitHub para que"
+  echo "            no queden desincronizados. Arreglalo y reintenta, o"
+  echo "            usa 'git push --no-verify' si es a proposito."
+  exit 1
+fi
+
+echo "[pre-push] Apps Script actualizado."

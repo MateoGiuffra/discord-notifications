@@ -13,22 +13,42 @@ function stripQuoted(text) {
 }
 
 /**
- * Corta la firma institucional del pie. Ignora las marcas de Markdown
- * al comparar, porque el nombre suele venir en negrita.
+ * Corta el pie del mail. Dos pasadas, porque hay dos clases de pie:
+ *
+ *   1. PIE_FIJO: boilerplate de plataforma ("Google LLC...", "You have
+ *      received this email because..."). No es ambiguo, asi que corta
+ *      aparezca donde aparezca.
+ *
+ *   2. FIRMA: la firma de una persona. Un mail puede nombrar a la
+ *      facultad al pasar, asi que solo corta en la mitad final.
+ *
+ * Se compara ignorando las marcas de Markdown, porque el nombre y los
+ * links del pie suelen venir en negrita o como [texto](url).
  */
 function stripSignature(text) {
   const lines = text.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    if (coincidePie(lines[i], PIE_FIJO)) return cortarEn(lines, i);
+  }
+
   const desde = Math.floor(lines.length * 0.5);
-
   for (let i = desde; i < lines.length; i++) {
-    const plano = lines[i].replace(/[*_~`]/g, '').trim();
-    if (!plano) continue;
-
-    const esFirma = FIRMA.some(function (re) { return re.test(plano); });
-    if (esFirma) return lines.slice(0, i).join('\n').trim();
+    if (coincidePie(lines[i], FIRMA)) return cortarEn(lines, i);
   }
 
   return text.trim();
+}
+
+function coincidePie(linea, patrones) {
+  const plano = linea.replace(/[*_~`]/g, '').trim();
+  if (!plano) return false;
+
+  return patrones.some(function (re) { return re.test(plano); });
+}
+
+function cortarEn(lines, i) {
+  return lines.slice(0, i).join('\n').trim();
 }
 
 /**
