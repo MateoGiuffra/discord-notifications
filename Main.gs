@@ -84,13 +84,25 @@ function esTurno() {
 /**
  * ¿Este minuto del dia cae dentro del `pct`% que se mira?
  *
- * ((m * pct) % 100) < pct da exactamente pct minutos de cada 100 y los
- * distribuye lo mas espaciados posible. pct=100 siempre da true, pct=0
- * siempre false, y no hay que hacer casos especiales para ninguno.
+ * Pensalo como una rueda de 100 casilleros. Cada minuto avanzas `pct`
+ * casilleros; cuando pasas por el cero, toca. Como avanzas pct por
+ * minuto, das la vuelta cada 100/pct minutos: con pct=10 toca cada 10
+ * minutos, con pct=1.67 cada hora. Queda repartido parejo todo el dia,
+ * no se queman los turnos al principio.
+ *
+ * (m * pct) % 100 es en que casillero estas. Si es menor que pct, en
+ * este minuto cruzaste el cero.
+ *
+ * pct=100 siempre da true y pct=0 siempre false, sin casos especiales.
+ *
+ * El epsilon es por los porcentajes con decimales: 1000 * 5.2 da
+ * 5199.999999999999 en binario, no 5200, y sin el margen el minuto
+ * siguiente cae en 5.199999999999818 < 5.2 y dispara dos veces
+ * seguidas. Con pct enteros no cambia nada.
  */
 function tocaEnElMinuto(minutoDelDia, pct) {
   const p = Math.max(0, Math.min(100, Number(pct) || 0));
-  return ((minutoDelDia * p) % 100) < p;
+  return ((minutoDelDia * p) % 100) < p - 1e-9;
 }
 
 /**

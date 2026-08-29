@@ -129,6 +129,9 @@ la cual no se busca ningún día sin importar la intensidad.
 Ejecutá **`diagnosticoHorario`** para ver la zona horaria, si toca ahora, cuántas
 búsquedas por día implica cada intensidad y cuánta cuota semanal es eso.
 
+Los números con la config actual están en **[CUOTA.md](CUOTA.md)**: cuánto consume cada
+día, el pico del viernes, y qué cambia si el trigger va cada 1 o cada 5 minutos.
+
 ## El filtro
 
 ```
@@ -188,8 +191,9 @@ original* en Gmail) en vez del `msgId`: lo resuelve igual.
   se descontrola, `resetEstado`.
 - **Si Discord falla:** frena y reintenta en la próxima corrida. No pierde mails.
 - **Si sale 429:** ver abajo.
-- **Cuota:** ~90 min/día de ejecución en cuentas gratuitas. `diagnosticoHorario` te
-  dice cuánto consume tu configuración.
+- **Cuota:** ~90 min/día de ejecución en cuentas gratuitas. El viernes, que es el día
+  pico, se usan ~21 min. Las cuentas en [CUOTA.md](CUOTA.md); `diagnosticoHorario` las
+  recalcula con la config que tengas puesta.
 - **El link del embed** apunta a `mail.google.com/u/0`. Si usás varias cuentas en el
   navegador, cambiá el `u/0` por el índice que corresponda.
 
